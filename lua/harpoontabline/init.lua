@@ -40,7 +40,6 @@ local function genTabline(harpoon, opts)
         local name = dir
         local active = i == selIndex
         if active then
-            vim.notify("Active: " .. name)
             tabline = tabline .. "%#TablineSel#"
         else
             tabline = tabline .. "%#Tabline#"
@@ -69,19 +68,15 @@ local ret = function()
     genTabline(harpoon, {})
     return {
         ADD = function(cx)
-            vim.notify("ADD")
             genTabline(harpoon, { include = { cx.item.value } })
         end,
         SELECT = function(cx)
-            vim.notify("SELECT")
             genTabline(harpoon, { selected = cx.item.value })
         end,
         REMOVE = function(cx)
-            vim.notify("REMOVE " .. vim.inspect(cx))
             genTabline(harpoon, { exclude = { cx.item.value } })
         end,
         REORDER = function()
-            vim.notify("REORDER")
             genTabline(harpoon, {})
         end,
     }
