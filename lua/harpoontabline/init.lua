@@ -16,6 +16,17 @@ local function genTabline(harpoon, opts)
     for _, dir in ipairs(opts.include or {}) do
         table.insert(display, dir)
     end
+    local extras = {}
+    for _, dir in ipairs(display) do
+        extras[dir] = (extras[dir] or 0) + 1
+    end
+    for i = #display, 1, -1 do
+        local dir = display[i]
+        if extras[dir] > 1 then
+            table.remove(display, i)
+            extras[dir] = extras[dir] - 1
+        end
+    end
     local justNames = vim.tbl_map(function(x) return vim.fn.split(x, "/")[#vim.fn.split(x, "/")] end, display)
     local past = {}
     for i, dir in ipairs(justNames) do
