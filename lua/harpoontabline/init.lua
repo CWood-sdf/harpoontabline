@@ -7,9 +7,10 @@
 ---@param opts ConfigHarpoonTablineValues
 local function genTabline(harpoon, opts)
     local currentFile = vim.fn.expand("%:p")
-    currentFile = vim.fn.fnamemodify(currentFile, ":t")
+    currentFile = vim.fn.fnamemodify(currentFile, ":.")
     opts.selected = opts.selected or currentFile
     local tabline = ""
+    local tabLen = 0
     local display = harpoon:list():display()
     display = vim.tbl_filter(function(x) return x ~= "" end, display)
     display = vim.tbl_filter(function(x) return not vim.tbl_contains(opts.exclude or {}, x) end, display)
@@ -41,7 +42,7 @@ local function genTabline(harpoon, opts)
     end
     local selIndex = 0
     for i, dir in ipairs(justNames) do
-        if dir == opts.selected then
+        if display[i] == opts.selected then
             selIndex = i
             break
         end
@@ -55,10 +56,12 @@ local function genTabline(harpoon, opts)
         else
             tabline = tabline .. "%#Tabline#"
         end
+        local start = #tabline
         tabline = tabline .. "   "
         tabline = tabline .. i
         tabline = tabline .. " " .. name .. " "
         tabline = tabline .. "   "
+        tabLen = tabLen + #tabline - start
         if active then
             tabline = tabline .. "%#TablineSel#"
         else
@@ -66,6 +69,27 @@ local function genTabline(harpoon, opts)
         end
     end
     tabline = tabline .. "%#Tabline#"
+
+    local pageList = ""
+    local pageLen = 0
+    for _, v in ipairs(vim.api.nvim_list_tabpages()) do
+        if v == vim.api.nvim_get_current_tabpage() then
+            pageList = pageList .. "%#TablineSel#"
+        else
+            pageList = pageList .. "%#Tabline#"
+        end
+        local start = #pageList
+        pageList = pageList .. "  "
+        pageList = pageList .. v
+        pageList = pageList .. '  '
+        pageLen = pageLen + #pageList - start
+    end
+    if #vim.api.nvim_list_tabpages() ~= 1 then
+        local width = tonumber(vim.api.nvim_exec2("echo &columns", { output = true }).output) or 0
+        local extra = width - pageLen - tabLen
+        tabline = tabline .. string.rep(' ', extra)
+        tabline = tabline .. pageList
+    end
     -- print(vim.inspect(tabline))
     vim.o.tabline = tabline
 end
