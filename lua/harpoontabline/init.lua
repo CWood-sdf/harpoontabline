@@ -3,6 +3,8 @@
 ---@field include? string[]
 ---@field selected? string
 
+TablineNames = {}
+
 ---@param harpoon Harpoon
 ---@param opts ConfigHarpoonTablineValues
 local function genTabline(harpoon, opts)
@@ -72,7 +74,7 @@ local function genTabline(harpoon, opts)
 
     local pageList = ""
     local pageLen = 0
-    for _, v in ipairs(vim.api.nvim_list_tabpages()) do
+    for i, v in ipairs(vim.api.nvim_list_tabpages()) do
         if v == vim.api.nvim_get_current_tabpage() then
             pageList = pageList .. "%#TablineSel#"
         else
@@ -80,7 +82,11 @@ local function genTabline(harpoon, opts)
         end
         local start = #pageList
         pageList = pageList .. "  "
-        pageList = pageList .. v
+        if TablineNames[i] ~= nil then
+            pageList = pageList .. TablineNames[i]
+        else
+            pageList = pageList .. v
+        end
         pageList = pageList .. '  '
         pageLen = pageLen + #pageList - start
     end
@@ -120,6 +126,22 @@ local M = {}
 M.setup = function()
     ---@diagnostic disable-next-line: cast-local-type
     ret = ret()
+
+    vim.api.nvim_create_user_command("TablineRename", function(opts)
+        local num = tonumber(opts.args[1])
+        while num == nil do
+            num = tonumber(vim.fn.input("Input a tabline index (not the number): "))
+        end
+        local name = opts.args[2]
+        if name == nil then
+            name = vim.fn.input("Give it a name: ")
+        end
+        TablineNames[num] = name
+    end, {
+        nargs = 2,
+
+    })
+
     return ret
 end
 M.get = function()
