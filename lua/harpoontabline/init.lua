@@ -3,8 +3,6 @@
 ---@field include? string[]
 ---@field selected? string
 
-TablineNames = {}
-
 ---@param harpoon Harpoon
 ---@param opts ConfigHarpoonTablineValues
 local function genTabline(harpoon, opts)
@@ -50,6 +48,11 @@ local function genTabline(harpoon, opts)
         end
     end
     -- print(harpoon:list():length())
+    local tablineNames = vim.fn.split(vim.g.TablineNames or '', ',')
+    tablineNames = vim.tbl_map(function(n)
+        if n == '' then return nil end
+        return n
+    end, tablineNames)
     for i, dir in ipairs(justNames) do
         local name = dir
         local active = i == selIndex
@@ -82,8 +85,8 @@ local function genTabline(harpoon, opts)
         end
         local start = #pageList
         pageList = pageList .. "  "
-        if TablineNames[i] ~= nil then
-            pageList = pageList .. TablineNames[i]
+        if tablineNames[i] ~= nil then
+            pageList = pageList .. tablineNames[i]
         else
             pageList = pageList .. v
         end
@@ -107,6 +110,26 @@ local ret = function()
         end
     })
     genTabline(harpoon, {})
+    vim.api.nvim_create_user_command("TablineRename", function(opts)
+        local num = tonumber(opts.fargs[1])
+        while num == nil do
+            num = tonumber(vim.fn.input("Input a tabline index (not the number): "))
+        end
+        local name = opts.fargs[2]
+        if name == nil then
+            name = vim.fn.input("Give it a name: ")
+        end
+        local tablineNames = vim.fn.split(vim.g.TablineNames or '', ',')
+        tablineNames[num] = name
+        vim.g.TablineNames = ""
+        for _, v in ipairs(tablineNames) do
+            vim.g.TablineNames = vim.g.TablineNames .. v .. ','
+        end
+        genTabline(harpoon, {})
+    end, {
+        nargs = '*',
+
+    })
     return {
         ADD = function(cx)
             genTabline(harpoon, { include = { cx.item.value } })
@@ -126,21 +149,6 @@ local M = {}
 M.setup = function()
     ---@diagnostic disable-next-line: cast-local-type
     ret = ret()
-
-    vim.api.nvim_create_user_command("TablineRename", function(opts)
-        local num = tonumber(opts.args[1])
-        while num == nil do
-            num = tonumber(vim.fn.input("Input a tabline index (not the number): "))
-        end
-        local name = opts.args[2]
-        if name == nil then
-            name = vim.fn.input("Give it a name: ")
-        end
-        TablineNames[num] = name
-    end, {
-        nargs = 2,
-
-    })
 
     return ret
 end
