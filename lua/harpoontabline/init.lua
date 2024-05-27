@@ -28,7 +28,11 @@ local function genTabline(harpoon, opts)
             extras[dir] = extras[dir] - 1
         end
     end
-    local justNames = vim.tbl_map(function(x) return vim.fn.split(x, "/")[#vim.fn.split(x, "/")] end, display)
+    local separator = '/'
+    if jit.os == "Windows" then
+        separator = '\\'
+    end
+    local justNames = vim.tbl_map(function(x) return vim.fn.split(x, separator)[#vim.fn.split(x, separator)] end, display)
     local past = {}
     for i, dir in ipairs(justNames) do
         if past[dir] == nil then
