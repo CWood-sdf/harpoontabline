@@ -102,6 +102,24 @@ local function genTabline(harpoon, opts)
     -- print(vim.inspect(tabline))
     vim.o.tabline = tabline
 end
+local function regenTabline(tablineNames)
+    local harpoon = require('harpoon')
+    vim.g.TablineNames = ""
+    for _, v in ipairs(tablineNames) do
+        vim.g.TablineNames = vim.g.TablineNames .. v .. ','
+    end
+    genTabline(harpoon, {})
+end
+
+local function getIndexFromTablineNumber(num)
+    for i, v in ipairs(vim.api.nvim_list_tabpages()) do
+        if v == num then
+            return i
+        end
+    end
+    return 0
+end
+
 local ret = function()
     local harpoon = require("harpoon")
     vim.api.nvim_create_autocmd("BufEnter", {
@@ -110,6 +128,34 @@ local ret = function()
         end
     })
     genTabline(harpoon, {})
+    vim.api.nvim_create_user_command("TablineShiftByAfter", function(opts)
+        local shift = tonumber(opts.fargs[1])
+        while shift == nil do
+            shift = tonumber(vim.fn.input("Shift number: "))
+        end
+        local index = tonumber(opts.fargs[2])
+        while index == nil or index < 1 do
+            index = tonumber(vim.fn.input("Tabline index (not number): "))
+        end
+        local tablineNames = vim.fn.split(vim.g.TablineNames or '', ',')
+        local startLen = #tablineNames
+        if shift < 0 then
+            while startLen + shift < #tablineNames do
+                table.remove(tablineNames, index)
+            end
+        end
+        if shift > 0 then
+            while startLen + shift > #tablineNames do
+                table.insert(tablineNames, index, '')
+            end
+        end
+        while #tablineNames > #vim.api.nvim_list_tabpages() do
+            table.remove(tablineNames, #tablineNames)
+        end
+        regenTabline(tablineNames)
+    end, {
+        nargs = '*',
+    })
     vim.api.nvim_create_user_command("TablineRename", function(opts)
         local num = tonumber(opts.fargs[1])
         while num == nil do
@@ -120,15 +166,20 @@ local ret = function()
             name = vim.fn.input("Give it a name: ")
         end
         local tablineNames = vim.fn.split(vim.g.TablineNames or '', ',')
-        tablineNames[num] = name
-        vim.g.TablineNames = ""
-        for _, v in ipairs(tablineNames) do
-            vim.g.TablineNames = vim.g.TablineNames .. v .. ','
+        while #tablineNames < num do
+            table.insert(tablineNames, '')
         end
-        genTabline(harpoon, {})
+        tablineNames[num] = name
+        regenTabline(tablineNames)
     end, {
         nargs = '*',
-
+    })
+    vim.api.nvim_create_autocmd("TabNew", {
+        callback = function(opts)
+            -- local newPage = vim.api.nvim_tabpage_get_number(0)
+            -- print(getIndexFromTablineNumber(newPage) - 1)
+            -- vim.cmd("TablineShiftByAfter 1 " .. (getIndexFromTablineNumber(newPage) - 1))
+        end
     })
     return {
         ADD = function(cx)
