@@ -97,6 +97,7 @@ local function genTabline(harpoon, opts)
         pageList = pageList .. '  '
         pageLen = pageLen + #pageList - start
     end
+    print(vim.api.nvim_get_current_tabpage())
     if #vim.api.nvim_list_tabpages() ~= 1 then
         local width = tonumber(vim.api.nvim_exec2("echo &columns", { output = true }).output) or 0
         local extra = width - pageLen - tabLen
@@ -112,7 +113,9 @@ local function regenTabline(tablineNames)
     for _, v in ipairs(tablineNames) do
         vim.g.TablineNames = vim.g.TablineNames .. v .. ','
     end
-    genTabline(harpoon, {})
+    vim.defer_fn(function()
+        genTabline(harpoon, {})
+    end, 50)
 end
 
 local function getIndexFromTablineNumber(num)
@@ -126,6 +129,11 @@ end
 
 local ret = function()
     local harpoon = require("harpoon")
+    vim.api.nvim_create_autocmd("TabEnter", {
+        callback = function()
+            genTabline(harpoon, {})
+        end
+    })
     vim.api.nvim_create_autocmd("BufEnter", {
         callback = function()
             genTabline(harpoon, {})
