@@ -97,7 +97,6 @@ local function genTabline(harpoon, opts)
         pageList = pageList .. '  '
         pageLen = pageLen + #pageList - start
     end
-    print(vim.api.nvim_get_current_tabpage())
     if #vim.api.nvim_list_tabpages() ~= 1 then
         local width = tonumber(vim.api.nvim_exec2("echo &columns", { output = true }).output) or 0
         local extra = width - pageLen - tabLen
