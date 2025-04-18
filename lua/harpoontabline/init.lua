@@ -135,7 +135,9 @@ local ret = function()
     })
     vim.api.nvim_create_autocmd("BufEnter", {
         callback = function()
-            genTabline(harpoon, {})
+            vim.defer_fn(function()
+                genTabline(harpoon, {})
+            end, 50)
         end
     })
     genTabline(harpoon, {})
